@@ -58,9 +58,69 @@ Core Subnet (192.168.250x): to connect all core network (UPFs) to external netwo
 # Edit /etc/sysctl.conf and search for the following lines:
 # Uncomment the next line to enable packet forwarding for IPv4
 net.ipv4.ip_forward=1
-
 ```
 
 ## 5G Core Installation
+
+We used the 5G Core network from Aether project 
+
+The guideline to install 5G Core is referred from: https://docs.aetherproject.org/master/developer/aiab.html
+
+To initialize the AiaB environment, first clone the following repository in your home directory:
+
+```
+cd ~
+git clone "https://gerrit.opencord.org/aether-in-a-box"
+cd ~/aether-in-a-box
+```
+
+Note that Aether-in-a-Box (AiaB) provides an easy way to deploy Aether’s SD-CORE (5G Core) and other components (gNB, UE) in one server with one physical network interface. To adapt with our testbed design, there are some settings (in Makefile) are needed to update as below table.
+
+### File *Makefile*
+| Setting | Default Value | New Value |
+| ------ |------|------|
+| ENABLE_ROUTER | true | false |
+| ENABLE_OAISIM | true | false |
+| ENABLE_GNBSIM | true | false |
+| GNBSIM_COLORS | true | false |
+
+Delete module $(M)/interface-check during process of installing K8s
+
+```diff
+ifeq ($(K8S_INSTALL),kubespray)
+-  $(M)/setup: | $(M) $(M)/interface-check
++  $(M)/setup: | $(M)
+
+ifeq ($(K8S_INSTALL),rke2)
+-  $(M)/initial-setup: | $(M) $(M)/interface-check
++  $(M)/initial-setup: | $(M)
+```
+### File *sd-core-5g-values.yaml (omec-user-plane configurations)*
+Update the actual name of access and core interfaces in VM4
+
+| Setting | Default Value | New Value |
+| ------ |------|------|
+| iface (access) | ${DATA_IFACE} | Name of access Inf (NIC 2) |
+| iface (core) | ${DATA_IFACE} | Name of core Inf (NIC 3) |
+
+
+Now run the script to install 5G Core network
+
+To install the ROC using the latest published charts, add CHARTS=latest to the command, e.g.,:
+
+```
+CHARTS=latest make 5g-core #override value file -  `~/aether-in-a-box/sd-core-5g-values.yaml`
+```
+
+To install the Aether 2.0 release, add CHARTS=release-2.0:
+```
+CHARTS=release-2.0 make 5g-core  #override value file -  `~/aether-in-a-box/release-2.0/sd-core-5g-values.yaml`
+```
+
+Check the pod after the script finish running
+```
+kubectl get pod --all-namespaces -o wide
+```
+
 
 ## UE & RAN Installation
