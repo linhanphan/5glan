@@ -1,0 +1,50 @@
+version: '3.9'
+
+services:
+  gnb1:
+    container_name: gnb1
+    image: free5gc/ueransim:latest
+    command: ./nr-gnb -c ./config/gnb1.yaml
+    ports:
+      - "192.168.251.5:2152:2152" # Create unique network interface for each gnb
+    environment:
+      - http_proxy=${http_proxy}
+      - https_proxy=${https_proxy}
+    volumes:
+      - ./config:/ueransim/config
+    cap_add:
+      - ALL
+
+
+  ue1:
+    container_name: ue1
+    image: free5gc/ueransim:latest
+    command: ./nr-ue -c ./config/ue1.yaml
+    depends_on:
+      - gnb1
+    environment:
+      - http_proxy=${http_proxy}
+      - https_proxy=${https_proxy}
+    volumes:
+      - ./config:/ueransim/config
+    cap_add:
+      - ALL
+    devices:
+      - "/dev/net/tun"
+ 
+  ue2:
+    container_name: ue2
+    image: free5gc/ueransim:latest
+    command: ./nr-ue -c ./config/ue2.yaml
+    depends_on:
+      - gnb1
+    environment:
+      - http_proxy=${http_proxy}
+      - https_proxy=${https_proxy}
+    volumes:
+      - ./config:/ueransim/config
+    cap_add:
+      - ALL
+    devices:
+      - "/dev/net/tun"
+
